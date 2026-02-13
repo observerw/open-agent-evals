@@ -1,0 +1,22 @@
+[project]
+name = "verilogeval"
+version = "0.1.0"
+description = "An example evaluation project for Verilog code generation using Open-Agent-Evals."
+readme = "README.md"
+authors = [
+    { name = "observerw", email = "wozluohd@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "attrs>=25.4.0",
+    "datasets>=4.5.0",
+    "open-agent-evals",
+    "pydantic>=2.12.5",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.9,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+open-agent-evals = { workspace = true }

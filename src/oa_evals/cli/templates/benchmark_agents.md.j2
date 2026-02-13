@@ -1,0 +1,8 @@
+## Benchmark Development Guide
+
+- Keep benchmark logic in `benchmark.py` and export one `Benchmark` subclass.
+- Define a row schema with `pydantic.BaseModel`, then validate each dataset row before creating `Task` objects.
+- In `load_tasks`, set `TaskMetadata`, `root_path=Path.cwd()`, and use `prompt.text(...)` for task prompts.
+- Use `setup` to prepare sandbox files, and implement graders with `GraderContext` plus `OutcomeValue`.
+- Register graders with `GraderRegistry(...)`, and add metrics (for example `create_pass_k`) when needed.
+- Start by editing `DATASET_NAME`, `DATASET_SPLIT`, and `ExampleRow` in `benchmark.py` to match your dataset.

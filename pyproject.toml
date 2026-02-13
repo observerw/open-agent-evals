@@ -1,0 +1,68 @@
+[project]
+name = "open-agent-evals"
+version = "0.1.0"
+description = "Open standards for evaluating agents"
+readme = "README.md"
+authors = [
+    { name = "observerw", email = "wozluohd@gmail.com" }
+]
+
+requires-python = ">=3.12"
+dependencies = [
+    "acp-agent",
+    "agent-client-protocol>=0.7.1",
+    "anyio>=4.12.1",
+    "attrs>=25.4.0",
+    "cyclopts>=4.5.1",
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "loguru>=0.7.3",
+    "openai>=2.16.0",
+    "platformdirs>=4.5.1",
+    "pydantic>=2.12.5",
+    "rich>=13.0.0",
+    "tenacity>=8.0.0",
+]
+
+[project.scripts]
+oae = "oa_evals.cli:app"
+agent-evals = "oa_evals.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.9.9,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "oa_evals"
+
+[tool.uv.workspace]
+members = [
+    "packages/acp-agent",
+    "examples/verilogeval",
+]
+
+[tool.uv.sources]
+acp-agent = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-anyio>=0.0.0",
+    "pytest-asyncio>=0.25.3",
+]
+daytona = [
+    "daytona>=0.138.0",
+]
+opensandbox = [
+    "opensandbox>=0.1.4",
+]
+agent-sandbox = [
+    "agent-sandbox>=0.0.21",
+]
+e2b = [
+    "e2b>=2.13.0",
+    "e2b-code-interpreter>=2.4.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,102 @@
+from __future__ import annotations
+
+import math
+from functools import partial
+from pathlib import Path
+from typing import ClassVar, Final, override
+
+import attrs
+from datasets import Dataset, load_dataset
+from pydantic import BaseModel
+
+from oa_evals import prompt
+from oa_evals.grader import GraderContext, GraderRegistry, OutcomeValue
+from oa_evals.metric import MetricValue, OutcomeMetricProtocol, Trails
+from oa_evals.sandbox import Sandbox
+from oa_evals.task import Benchmark, BenchmarkMetadata, Task, TaskMetadata
+
+DATASET_NAME: Final = "your-org/your-dataset"
+DATASET_SPLIT: Final = "test"
+SOLUTION_PATH: Final = Path("solution.txt")
+REFERENCE_PATH: Final = Path("reference.txt")
+
+
+async def exact_match_grader(ctx: GraderContext) -> OutcomeValue[bool]:
+    if not await ctx.sandbox.exists(SOLUTION_PATH):
+        return OutcomeValue(root=False)
+    if not await ctx.sandbox.exists(REFERENCE_PATH):
+        return OutcomeValue(root=False)
+
+    solution = await ctx.sandbox.read_file(SOLUTION_PATH)
+    reference = await ctx.sandbox.read_file(REFERENCE_PATH)
+    return OutcomeValue(root=solution.strip() == reference.strip())
+
+
+def create_pass_k(k: int) -> OutcomeMetricProtocol:
+    async def pass_k(
+        *, exact_match: Trails[OutcomeValue[bool]], **kwargs: Trails
+    ) -> MetricValue[float]:
+        n = len(exact_match)
+        if n == 0:
+            return MetricValue(root=0.0)
+
+        c = sum(1 for trail in exact_match if trail.outcome.root)
+        if n - c < k:
+            return MetricValue(root=1.0)
+
+        return MetricValue(root=1.0 - math.comb(n - c, k) / math.comb(n, k))
+
+    return pass_k  # type: ignore[return-value]
+
+
+class ExampleRow(BaseModel):
+    task_id: str
+    prompt: str
+    reference: str
+    detail_description: str | None = None
+
+
+@attrs.define
+class CustomBenchmark(Benchmark):
+    metadata: ClassVar = BenchmarkMetadata(
+        id="custom-benchmark",
+        name="CustomBenchmark",
+        description="Generic benchmark template.",
+        version="0.1.0",
+    )
+    graders: ClassVar = GraderRegistry(
+        exact_match=exact_match_grader,
+    )
+    outcome_metrics: ClassVar = {
+        "pass@1": create_pass_k(1),
+    }
+
+    @override
+    def load_tasks(self) -> list[Task]:
+        async def write_reference(sandbox: Sandbox, reference: str) -> None:
+            await sandbox.write_file(REFERENCE_PATH, reference)
+
+        dataset = load_dataset(DATASET_NAME, split=DATASET_SPLIT)
+        assert isinstance(dataset, Dataset)
+
+        tasks: list[Task] = []
+        for row_data in dataset:
+            row = ExampleRow.model_validate(row_data)
+            tasks.append(
+                Task(
+                    benchmark=self,
+                    metadata=TaskMetadata(
+                        id=row.task_id,
+                        name=row.task_id,
+                        description=row.detail_description,
+                    ),
+                    root_path=Path.cwd(),
+                    prompt=prompt.text(
+                        "Please solve the following task and write your final answer to "
+                        "'solution.txt'.\n\n"
+                        f"Task:\n{row.prompt}"
+                    ),
+                    setup=partial(write_reference, reference=row.reference),
+                )
+            )
+        return tasks
