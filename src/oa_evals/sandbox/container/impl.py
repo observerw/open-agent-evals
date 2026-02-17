@@ -14,21 +14,36 @@ from acp.client import ClientSideConnection
 from anyio.abc import Process
 from attrs import define, field
 
-from oa_evals.utils.process import run_process
-
 from ..abc import Sandbox, SandboxBuilder, Terminal
-from ..exceptions import FileOperationError
+from ..exceptions import FileOperationError, TerminalOperationError
 from ..schema import BuildArgs, CommandResult
 from .utils import (
+    build_exec_command,
     build_image,
     download_from_container,
     exec_container,
-    get_backend,
     rm_container,
     rm_image,
+    start_container,
     stop_container,
     upload_to_container,
 )
+
+
+def _slice_content(content: str, *, limit: int | None, line: int | None) -> str:
+    if line is None and limit is None:
+        return content
+
+    lines = content.splitlines(keepends=True)
+    start = 0 if line is None or line <= 1 else line - 1
+    if start >= len(lines):
+        return ""
+
+    if limit is None:
+        return "".join(lines[start:])
+    if limit <= 0:
+        return ""
+    return "".join(lines[start : start + limit])
 
 
 @define
@@ -86,33 +101,29 @@ class ContainerSandbox(Sandbox):
     async def read_file(
         self, path: Path, *, limit: int | None = None, line: int | None = None
     ) -> str:
-        cmd = ["cat", str(path)]
-        if line is not None:
-            # line is 0-indexed in SandboxPath but we'll assume 1-indexed for sed or just handle it
-            # Actually abc.py doesn't specify. Usually it's 1-indexed for line numbers.
-            # Let's use sed -n 'Xp'
-            cmd = ["sed", "-n", f"{line}p", str(path)]
-        elif limit is not None:
-            cmd = ["head", "-n", str(limit), str(path)]
-
-        result = await exec_container(self._container_name, *cmd, check=False)
+        result = await exec_container(
+            self._container_name,
+            "cat",
+            str(path),
+            check=False,
+        )
         if result.returncode != 0:
-            raise FileOperationError(f"Failed to read file {path}: {result.stderr}")
-        return result.stdout
+            detail = result.stderr or result.stdout
+            raise FileOperationError(f"Failed to read file {path}: {detail}")
+        return _slice_content(result.stdout, limit=limit, line=line)
 
     @override
     async def write_file(self, path: Path, content: str) -> None:
-        # Use sh -c "cat > path" to write content
         result = await exec_container(
             self._container_name,
-            "sh",
-            "-c",
-            f"cat > {path}",
+            "tee",
+            str(path),
             input=content,
             check=False,
         )
         if result.returncode != 0:
-            raise FileOperationError(f"Failed to write file {path}: {result.stderr}")
+            detail = result.stderr or result.stdout
+            raise FileOperationError(f"Failed to write file {path}: {detail}")
 
     @override
     async def upload_file(self, local_path: Path, container_path: Path) -> None:
@@ -137,7 +148,7 @@ class ContainerSandbox(Sandbox):
         env: Mapping[str, str] | None = None,
         timeout: float | None = None,
     ) -> ContainerTerminal:
-        args = self._build_args(*cmd, cwd=cwd, env=env)
+        args = self._build_exec_args(*cmd, cwd=cwd, env=env)
         return ContainerTerminal(args=args, timeout=timeout)
 
     @override
@@ -148,50 +159,44 @@ class ContainerSandbox(Sandbox):
         cwd: str | Path | None = None,
         env: Mapping[str, str] | None = None,
     ) -> ClientSideConnection:
-        args = self._build_args(*cmd, cwd=cwd, env=env)
+        args = self._build_exec_args(*cmd, cwd=cwd, env=env)
         process = await asyncio.create_subprocess_exec(
             *args,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
         )
-        assert process.stdin and process.stdout
+        if process.stdin is None or process.stdout is None:
+            msg = "Failed to open ACP process streams"
+            raise TerminalOperationError(msg)
         return connect_to_agent(client, process.stdin, process.stdout)
 
-    def _build_args(
+    def _build_exec_args(
         self,
         *cmd: str,
         cwd: str | Path | None = None,
         env: Mapping[str, str] | None = None,
     ) -> list[str]:
-        backend = get_backend()
-        args = [backend, "exec", "-i"]
-        if cwd:
-            args.extend(["--workdir", str(cwd)])
-        if env:
-            for k, v in env.items():
-                args.extend(["-e", f"{k}={v}"])
-        args.append(self._container_name)
-        # FIXME how to exec command?
-        args.extend(["sh", "-c", "".join(cmd)])
-        return args
+        if not cmd:
+            raise TerminalOperationError("Command cannot be empty")
+
+        command = ("sh", "-lc", cmd[0]) if len(cmd) == 1 else tuple(cmd)
+        return build_exec_command(
+            self._container_name,
+            *command,
+            workdir=str(cwd) if cwd else None,
+            env=env,
+            interactive=True,
+        )
 
     @override
     @asynccontextmanager
     async def run(self) -> AsyncGenerator[Self]:
-        backend = get_backend()
-        cmd = [
-            backend,
-            "run",
-            "-d",
-            "--name",
-            self._container_name,
+        await start_container(
             self.image_tag,
-            "sleep",
-            "infinity",
-        ]
-        await run_process(*cmd)
-
+            name=self._container_name,
+            command=("sleep", "infinity"),
+            rm=False,
+        )
         try:
             yield self
         finally:

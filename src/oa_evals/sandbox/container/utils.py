@@ -101,6 +101,79 @@ type MountPoint = BindMount | VolumeMount | TmpfsMount
 type Mount = MountPoint | str | Path
 
 
+def build_run_command(
+    image: str,
+    *,
+    name: str | None = None,
+    mounts: Sequence[Mount] | None = None,
+    command: Sequence[str] | None = None,
+    entrypoint: str | None = None,
+    env: Mapping[str, str] | None = None,
+    workdir: str | None = None,
+    user: str | None = None,
+    detach: bool = False,
+    rm: bool = True,
+    network: str | None = None,
+) -> list[str]:
+    backend = get_backend()
+    cmd = [backend, "run"]
+    if rm:
+        cmd.append("--rm")
+    if detach:
+        cmd.append("-d")
+    else:
+        cmd.append("-i")
+    if name:
+        cmd.extend(["--name", name])
+    if workdir:
+        cmd.extend(["--workdir", workdir])
+    if user:
+        cmd.extend(["--user", user])
+    if network:
+        cmd.extend(["--network", network])
+
+    if mounts:
+        for m in mounts:
+            cmd.extend(["--mount", _format_mount(m)])
+
+    if env:
+        for k, v in env.items():
+            cmd.extend(["-e", f"{k}={v}"])
+
+    if entrypoint:
+        cmd.extend(["--entrypoint", entrypoint])
+
+    cmd.append(image)
+    if command:
+        cmd.extend(command)
+
+    return cmd
+
+
+def build_exec_command(
+    container: str,
+    *command: str,
+    env: Mapping[str, str] | None = None,
+    user: str | None = None,
+    workdir: str | None = None,
+    interactive: bool = False,
+) -> list[str]:
+    backend = get_backend()
+    cmd = [backend, "exec"]
+    if interactive:
+        cmd.append("-i")
+    if user:
+        cmd.extend(["--user", user])
+    if workdir:
+        cmd.extend(["--workdir", workdir])
+    if env:
+        for k, v in env.items():
+            cmd.extend(["-e", f"{k}={v}"])
+    cmd.append(container)
+    cmd.extend(command)
+    return cmd
+
+
 def _format_mount(mount: Mount) -> str:
     if isinstance(mount, Path):
         return str(BindMount.from_path(mount))
@@ -152,6 +225,41 @@ async def rm_image(image: str) -> None:
     await run_process(backend, "rmi", "-f", image, check=False)
 
 
+async def start_container(
+    image: str,
+    *,
+    name: str | None = None,
+    mounts: Sequence[Mount] | None = None,
+    command: Sequence[str] | None = None,
+    entrypoint: str | None = None,
+    env: Mapping[str, str] | None = None,
+    workdir: str | None = None,
+    user: str | None = None,
+    rm: bool = True,
+    network: str | None = None,
+) -> None:
+    cmd = build_run_command(
+        image,
+        name=name,
+        mounts=mounts,
+        command=command,
+        entrypoint=entrypoint,
+        env=env,
+        workdir=workdir,
+        user=user,
+        detach=True,
+        rm=rm,
+        network=network,
+    )
+
+    logger.debug("Starting container: {}", " ".join(cmd))
+    result = await run_process(*cmd, check=False)
+    if result.returncode != 0:
+        raise SandboxError(
+            f"Failed to start container: {result.stderr or result.stdout}"
+        )
+
+
 class ContainerStdio(NamedTuple):
     stdin: AnyByteSendStream
     stdout: AnyByteReceiveStream
@@ -173,37 +281,19 @@ async def run_container(
     rm: bool = True,
     network: str | None = None,
 ) -> AsyncGenerator[ContainerStdio, None]:
-    backend = get_backend()
-    cmd = [backend, "run"]
-    if rm:
-        cmd.append("--rm")
-    if detach:
-        cmd.append("-d")
-    else:
-        cmd.append("-i")
-    if name:
-        cmd.extend(["--name", name])
-    if workdir:
-        cmd.extend(["--workdir", workdir])
-    if user:
-        cmd.extend(["--user", user])
-    if network:
-        cmd.extend(["--network", network])
-
-    if mounts:
-        for m in mounts:
-            cmd.extend(["--mount", _format_mount(m)])
-
-    if env:
-        for k, v in env.items():
-            cmd.extend(["-e", f"{k}={v}"])
-
-    if entrypoint:
-        cmd.extend(["--entrypoint", entrypoint])
-
-    cmd.append(image)
-    if command:
-        cmd.extend(command)
+    cmd = build_run_command(
+        image,
+        name=name,
+        mounts=mounts,
+        command=command,
+        entrypoint=entrypoint,
+        env=env,
+        workdir=workdir,
+        user=user,
+        detach=detach,
+        rm=rm,
+        network=network,
+    )
 
     logger.debug("Running container: {}", " ".join(cmd))
 
@@ -243,19 +333,14 @@ async def exec_container(
     input: str | None = None,
     check: bool = True,
 ) -> ProcessResult:
-    backend = get_backend()
-    cmd = [backend, "exec"]
-    if input is not None:
-        cmd.append("-i")
-    if user:
-        cmd.extend(["--user", user])
-    if workdir:
-        cmd.extend(["--workdir", workdir])
-    if env:
-        for k, v in env.items():
-            cmd.extend(["-e", f"{k}={v}"])
-    cmd.append(container)
-    cmd.extend(command)
+    cmd = build_exec_command(
+        container,
+        *command,
+        env=env,
+        user=user,
+        workdir=workdir,
+        interactive=input is not None,
+    )
 
     logger.debug("Executing in container {}: {}", container, " ".join(command))
     return await run_process(*cmd, input=input, check=check)

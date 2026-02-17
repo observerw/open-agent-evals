@@ -25,8 +25,8 @@ dependencies = [
 ]
 
 [project.scripts]
-oae = "oa_evals.cli:app"
-agent-evals = "oa_evals.cli:app"
+oa-evals = "oa_evals.cli:app"
+open-agent-evals = "oa_evals.cli:app"
 
 [build-system]
 requires = ["uv_build>=0.9.9,<0.10.0"]
