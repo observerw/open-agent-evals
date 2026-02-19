@@ -38,6 +38,12 @@ type ErrorMessage = {
   dashboardId?: string
 }
 
+type FinalizedMessage = {
+  type: "dashboard.finalized"
+  dashboardId: string
+  activeLayout: "final"
+}
+
 function parseJsonMessage(raw: unknown): unknown {
   if (typeof raw === "string") {
     return JSON.parse(raw)
@@ -70,7 +76,7 @@ function parseJsonMessage(raw: unknown): unknown {
   throw new Error("Unsupported message format")
 }
 
-function safeSend(socket: DashboardWsSocket, payload: AckMessage | SnapshotMessage | ErrorMessage) {
+function safeSend(socket: DashboardWsSocket, payload: AckMessage | SnapshotMessage | ErrorMessage | FinalizedMessage) {
   try {
     socket.send(JSON.stringify(payload))
   } catch {
@@ -156,6 +162,34 @@ class DashboardWsHub {
         step: dashboard.latestAcceptedStep,
         state: dashboard.liveStateSnapshot,
       })
+    }
+  }
+
+  notifyDashboardFinalized(input: { dashboardId: string }) {
+    const producer = this.producers.get(input.dashboardId)
+    if (producer) {
+      safeSend(producer, {
+        type: "error",
+        dashboardId: input.dashboardId,
+        message: "Dashboard is finalized",
+      })
+      producer.close(1008, "Dashboard closed for producer updates")
+      this.producers.delete(input.dashboardId)
+    }
+
+    const viewers = this.viewers.get(input.dashboardId)
+    if (!viewers) {
+      return
+    }
+
+    const payload: FinalizedMessage = {
+      type: "dashboard.finalized",
+      dashboardId: input.dashboardId,
+      activeLayout: "final",
+    }
+
+    for (const viewer of viewers) {
+      safeSend(viewer, payload)
     }
   }
 

@@ -15,6 +15,13 @@ export type DashboardRecord = {
   latestAcceptedStep: number | null
   finalStateSnapshot: Record<string, unknown> | null
   meta: Record<string, unknown> | null
+  finalizeByKey: Map<string, FinalizeDashboardPayload>
+}
+
+export type FinalizeDashboardPayload = {
+  dashboardId: string
+  status: "finalized"
+  activeLayout: "final"
 }
 
 export type LiveSnapshotUpdateResult =
@@ -34,6 +41,20 @@ export type LiveSnapshotUpdateResult =
   | {
       outcome: "accepted"
       latestAcceptedStep: number
+    }
+
+export type FinalizeDashboardResult =
+  | {
+      outcome: "not_found"
+    }
+  | {
+      outcome: "conflict"
+      latestAcceptedStep: number | null
+    }
+  | {
+      outcome: "finalized"
+      result: FinalizeDashboardPayload
+      transitioned: boolean
     }
 
 const dashboards = new Map<string, DashboardRecord>()
@@ -57,6 +78,7 @@ export function createDashboard(input: {
     latestAcceptedStep: null,
     finalStateSnapshot: null,
     meta: input.meta ?? null,
+    finalizeByKey: new Map(),
   }
 
   dashboards.set(dashboard.dashboardId, dashboard)
@@ -98,5 +120,64 @@ export function applyLiveSnapshot(input: {
   return {
     outcome: "accepted",
     latestAcceptedStep: input.step,
+  }
+}
+
+export function finalizeDashboard(input: {
+  dashboardId: string
+  lastStep: number
+  finalStateSnapshot?: Record<string, unknown>
+  idempotencyKey?: string
+}): FinalizeDashboardResult {
+  const dashboard = dashboards.get(input.dashboardId)
+  if (!dashboard) {
+    return { outcome: "not_found" }
+  }
+
+  const key = input.idempotencyKey?.trim() || null
+  if (key) {
+    const memorized = dashboard.finalizeByKey.get(key)
+    if (memorized) {
+      return {
+        outcome: "finalized",
+        result: memorized,
+        transitioned: false,
+      }
+    }
+  }
+
+  if (dashboard.latestAcceptedStep == null || input.lastStep !== dashboard.latestAcceptedStep) {
+    return {
+      outcome: "conflict",
+      latestAcceptedStep: dashboard.latestAcceptedStep,
+    }
+  }
+
+  if (dashboard.status === "collecting") {
+    dashboard.status = "finalizing"
+  }
+
+  let transitioned = false
+  if (dashboard.status === "finalizing") {
+    dashboard.finalStateSnapshot = input.finalStateSnapshot ?? dashboard.liveStateSnapshot
+    dashboard.activeLayout = "final"
+    dashboard.status = "finalized"
+    transitioned = true
+  }
+
+  const result: FinalizeDashboardPayload = {
+    dashboardId: dashboard.dashboardId,
+    status: "finalized",
+    activeLayout: "final",
+  }
+
+  if (key) {
+    dashboard.finalizeByKey.set(key, result)
+  }
+
+  return {
+    outcome: "finalized",
+    result,
+    transitioned,
   }
 }
