@@ -32,27 +32,6 @@ const Margin = z
   })
   .loose()
 
-const ChartConfigEntry = z
-  .object({
-    label: z.string().optional(),
-    color: z.string().optional(),
-    theme: z
-      .object({
-        light: z.string(),
-        dark: z.string(),
-      })
-      .optional(),
-  })
-  .loose()
-
-const ChartConfig = z
-  .object({
-    series1: ChartConfigEntry.optional(),
-    series2: ChartConfigEntry.optional(),
-    series3: ChartConfigEntry.optional(),
-  })
-  .loose()
-
 const ChartRootProps = PassThrough.extend({
   accessibilityLayer: z.boolean().optional(),
   margin: Margin.optional(),
@@ -140,7 +119,7 @@ export const DashboardGridProps = z.object({
 
 export const LineChartWidgetProps = WidgetBase.extend({
   data: DataSource,
-  chartConfig: ChartConfig.optional(),
+  chartConfig: PassThrough.optional(),
   chartProps: ChartRootProps.optional(),
   xAxisProps: AxisProps.optional(),
   yAxisProps: AxisProps.optional(),
@@ -151,7 +130,7 @@ export const LineChartWidgetProps = WidgetBase.extend({
 
 export const BarChartWidgetProps = WidgetBase.extend({
   data: DataSource,
-  chartConfig: ChartConfig.optional(),
+  chartConfig: PassThrough.optional(),
   chartProps: ChartRootProps.optional(),
   xAxisProps: AxisProps.optional(),
   yAxisProps: AxisProps.optional(),
@@ -162,7 +141,7 @@ export const BarChartWidgetProps = WidgetBase.extend({
 
 export const PieChartWidgetProps = WidgetBase.extend({
   data: DataSource,
-  chartConfig: ChartConfig.optional(),
+  chartConfig: PassThrough.optional(),
   chartProps: ChartRootProps.optional(),
   pieProps: PieVisualProps.optional(),
   tooltipProps: TooltipProps.optional(),

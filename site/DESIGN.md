@@ -354,7 +354,7 @@ pages/
 | ID | 任务 | 主要产出 | 状态 | 验收标准 |
 |---|---|---|---|---|
 | M0 | 边界冻结与文档更新 | 本设计文档 | [x] | 已明确“外部 agent 分析，本项目只渲染与流转” |
-| M1 | Catalog（透传优先） | `lib/dashboard/catalog.ts` | [ ] | 组件定义完成，prompt 可生成 |
+| M1 | Catalog（透传优先） | `lib/dashboard/catalog.ts` | [x] | 组件定义完成，prompt 可生成 |
 | M2 | Registry + Widgets | `lib/dashboard/registry.tsx` + widgets | [ ] | 各组件可渲染且透传 props 生效 |
 | M3 | Prompt API | `pages/api/dashboard/prompt.ts` | [ ] | GET 返回 prompt/rules |
 | M4 | Spec API（双布局） | `pages/api/dashboard/index.ts` + `[id].ts` | [ ] | POST/GET 正常，live/final 双 spec 可回放 |
@@ -365,8 +365,8 @@ pages/
 
 ### 10.1 细化任务清单
 
-- [ ] T1：定义 `GridPlacement` 与透传 schema（`PassThrough`）；
-- [ ] T2：完成 6 个组件的 catalog props 与描述；
+- [x] T1：定义 `GridPlacement` 与透传 schema（`PassThrough`）；
+- [x] T2：完成 6 个组件的 catalog props 与描述；
 - [ ] T3：完成 registry 映射与最小可运行示例；
 - [ ] T4：实现 prompt endpoint（强调“双布局 + finalize”规则）；
 - [ ] T5：实现 spec 校验（结构合法、placement 必填、live/final 双 spec 必填）；
