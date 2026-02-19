@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 from acp.schema import (
     AgentMessageChunk,
@@ -7,6 +9,7 @@ from acp.schema import (
     ToolCallStart,
     UserMessageChunk,
 )
+
 from oa_evals.acp.builder import MessageBuffer, ToolCallBuilder, TrajectoryBuilder
 from oa_evals.acp.schema import (
     AgentMessage,

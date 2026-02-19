@@ -4,7 +4,7 @@ import asyncio
 import codecs
 import shlex
 import uuid
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Mapping
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path, PurePosixPath
 from typing import Protocol, Self, final, override

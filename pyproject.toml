@@ -38,7 +38,6 @@ module-name = "oa_evals"
 [tool.uv.workspace]
 members = [
     "packages/acp-agent",
-    "examples/verilogeval",
 ]
 
 [tool.uv.sources]
