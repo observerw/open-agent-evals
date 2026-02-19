@@ -361,7 +361,7 @@ pages/
 | M5 | WebSocket（live） | `pages/api/dashboard/ws.ts` + `lib/dashboard/ws-hub.ts` | [x] | producer 按 step 推送 live snapshot 并驱动 viewer 更新 |
 | M6 | Finalize API | `pages/api/dashboard/[id]/finalize.ts` | [x] | finalize 幂等、`lastStep` 校验通过并切换 final 布局 |
 | M7 | 页面接入与布局切换 | `app/dashboard/[id]/page.tsx` + runtime | [x] | 推流中展示 live，finalize 后展示 final |
-| M8 | 测试与验收 | 单测/集成 | [ ] | 核心链路通过验收 |
+| M8 | 测试与验收 | 单测/集成 | [x] | 核心链路通过验收 |
 
 ### 10.1 细化任务清单
 
@@ -374,7 +374,7 @@ pages/
 - [x] T7：实现 WS live snapshot 协议、单调 step 校验与 producer/viewer 消息路由；
 - [x] T8：实现 finalize endpoint（幂等、`lastStep` 一致性校验、状态机切换）；
 - [x] T9：完成页面端 live/final 布局切换与 Renderer 刷新；
-- [ ] T10：补齐测试与错误日志。
+- [x] T10：补齐测试与错误日志。
 
 ## 11. 验收标准
 
