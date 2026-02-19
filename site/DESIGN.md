@@ -357,7 +357,7 @@ pages/
 | M1 | Catalog（透传优先） | `lib/dashboard/catalog.ts` | [x] | 组件定义完成，prompt 可生成 |
 | M2 | Registry + Widgets | `lib/dashboard/registry.tsx` + widgets | [x] | 各组件可渲染且透传 props 生效 |
 | M3 | Prompt API | `pages/api/dashboard/prompt.ts` | [x] | GET 返回 prompt/rules |
-| M4 | Spec API（双布局） | `pages/api/dashboard/index.ts` + `[id].ts` | [ ] | POST/GET 正常，live/final 双 spec 可回放 |
+| M4 | Spec API（双布局） | `pages/api/dashboard/index.ts` + `[id].ts` | [x] | POST/GET 正常，live/final 双 spec 可回放 |
 | M5 | WebSocket（live） | `pages/api/dashboard/ws.ts` + `lib/dashboard/ws-hub.ts` | [ ] | producer 按 step 推送 live snapshot 并驱动 viewer 更新 |
 | M6 | Finalize API | `pages/api/dashboard/[id]/finalize.ts` | [ ] | finalize 幂等、`lastStep` 校验通过并切换 final 布局 |
 | M7 | 页面接入与布局切换 | `app/dashboard/[id]/page.tsx` + runtime | [ ] | 推流中展示 live，finalize 后展示 final |
@@ -369,8 +369,8 @@ pages/
 - [x] T2：完成 6 个组件的 catalog props 与描述；
 - [x] T3：完成 registry 映射与最小可运行示例；
 - [x] T4：实现 prompt endpoint（强调“双布局 + finalize”规则）；
-- [ ] T5：实现 spec 校验（结构合法、placement 必填、live/final 双 spec 必填）；
-- [ ] T6：实现 dashboard store（内存版）；
+- [x] T5：实现 spec 校验（结构合法、placement 必填、live/final 双 spec 必填）；
+- [x] T6：实现 dashboard store（内存版）；
 - [ ] T7：实现 WS live snapshot 协议、单调 step 校验与 producer/viewer 消息路由；
 - [ ] T8：实现 finalize endpoint（幂等、`lastStep` 一致性校验、状态机切换）；
 - [ ] T9：完成页面端 live/final 布局切换与 Renderer 刷新；
