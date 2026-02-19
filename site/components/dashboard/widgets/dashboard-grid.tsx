@@ -78,18 +78,20 @@ export function WidgetShell({
   return (
     <div
       className={cn(
-        "grid gap-3 rounded-3xl border border-border/30 bg-card/70 p-4 shadow-[0_4px_30px_rgba(15,23,42,0.08)] ring-1 ring-border/10",
+        "flex h-full min-w-0 flex-col gap-3 border border-border bg-background p-4",
         className
       )}
       style={placementStyle}
       {...rest}
     >
       {title ? (
-        <div className="text-sm font-semibold leading-snug text-foreground">
+        <div className="font-mono text-sm font-medium leading-snug text-foreground">
           {title}
         </div>
       ) : null}
-      <div className={cn("flex flex-1 flex-col", bodyClassName)}>{children}</div>
+      <div className={cn("flex min-w-0 flex-1 flex-col", bodyClassName)}>
+        {children}
+      </div>
     </div>
   )
 }

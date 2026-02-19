@@ -12,7 +12,7 @@ const sampleSpec: Spec = {
       type: "DashboardGrid",
       props: {
         columns: 12,
-        gap: "md",
+        gap: "sm",
         densePacking: true,
       },
       children: ["kpi_text", "rev_line", "channel_bar", "mix_pie", "account_table"],
@@ -22,7 +22,11 @@ const sampleSpec: Spec = {
       props: {
         placement: { colSpan: 12, rowSpan: 1 },
         text: { $state: "/summary/headline" },
-        textProps: { as: "h2", variant: "title" },
+        textProps: {
+          as: "h2",
+          variant: "title",
+          className: "font-mono text-3xl font-semibold tracking-tight md:text-4xl",
+        },
       },
     },
     rev_line: {
@@ -36,10 +40,10 @@ const sampleSpec: Spec = {
           target: { label: "Target", color: "hsl(217 91% 60%)" },
         },
         chartProps: {
-          margin: { top: 8, right: 8, left: 8, bottom: 0 },
+          margin: { top: 8, right: 8, left: 0, bottom: 0 },
         },
-        xAxisProps: { dataKey: "month" },
-        yAxisProps: {},
+        xAxisProps: { dataKey: "month", tickLine: false },
+        yAxisProps: { tickLine: false, width: 56 },
         tooltipProps: {},
         legendProps: {},
         series: [
@@ -63,11 +67,11 @@ const sampleSpec: Spec = {
         chartConfig: {
           revenue: { label: "Revenue", color: "hsl(160 84% 39%)" },
         },
-        xAxisProps: { dataKey: "channel" },
-        yAxisProps: {},
+        xAxisProps: { dataKey: "channel", tickLine: false },
+        yAxisProps: { tickLine: false, width: 56 },
         tooltipProps: {},
         legendProps: {},
-        bars: [{ dataKey: "revenue", barProps: { radius: [6, 6, 0, 0] } }],
+        bars: [{ dataKey: "revenue", barProps: {} }],
       },
     },
     mix_pie: {
@@ -100,7 +104,7 @@ const sampleSpec: Spec = {
 
 const sampleState = {
   summary: {
-    headline: "Q1 dashboard sample: +18.4% revenue growth, retention remains stable.",
+    headline: "Q1 operating snapshot: growth is steady, structure is stable.",
   },
   data: {
     revenueSeries: [
@@ -135,22 +139,37 @@ const sampleState = {
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_hsl(22_100%_97%),_hsl(210_40%_99%))]">
-      <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 md:px-6 md:py-10">
-        <header className="rounded-2xl border border-border/50 bg-background/85 p-6 shadow-sm backdrop-blur">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sample Dashboard</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-            Agent-driven dashboard preview
-          </h1>
-          <p className="mt-3 max-w-3xl text-sm text-muted-foreground md:text-base">
-            This example uses the same json-render catalog and dashboard registry as the live workflow.
-            The structure comes from spec, and all values are supplied through state bindings.
-          </p>
+    <div className="min-h-screen bg-background font-mono text-foreground">
+      <main className="mx-auto w-full max-w-7xl border-x border-border">
+        <header className="border-b border-border px-6 py-5 md:px-10">
+          <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
+            <div className="text-lg font-semibold tracking-tight">opencode-style dashboard</div>
+            <div className="flex items-center gap-6 text-muted-foreground">
+              <span>GitHub</span>
+              <span>Docs</span>
+              <span>Enterprise</span>
+            </div>
+          </div>
         </header>
 
-        <JSONUIProvider registry={dashboardRegistry.registry} initialState={sampleState}>
-          <Renderer spec={sampleSpec} registry={dashboardRegistry.registry} />
-        </JSONUIProvider>
+        <section className="border-b border-border px-6 py-10 md:px-10 md:py-14">
+          <p className="inline-flex border border-border px-2 py-1 text-xs text-muted-foreground">
+            Sample
+          </p>
+          <h1 className="mt-6 max-w-4xl text-balance text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+            Minimal line dashboard rendered from json spec
+          </h1>
+          <p className="mt-5 max-w-3xl text-lg leading-relaxed text-muted-foreground">
+            Same runtime as the live pipeline: layout is controlled by spec, and all widget data comes from
+            state bindings.
+          </p>
+        </section>
+
+        <section className="px-6 py-6 md:px-10 md:py-8">
+          <JSONUIProvider registry={dashboardRegistry.registry} initialState={sampleState}>
+            <Renderer spec={sampleSpec} registry={dashboardRegistry.registry} />
+          </JSONUIProvider>
+        </section>
       </main>
     </div>
   )

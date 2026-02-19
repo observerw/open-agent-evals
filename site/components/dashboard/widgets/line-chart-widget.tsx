@@ -91,7 +91,10 @@ export const LineChartWidget: ComponentFn<DashboardCatalog, "LineChartWidget"> =
 
   return (
     <WidgetShell placement={props.placement} title={props.title} bodyClassName="min-h-0">
-      <ChartContainer className="min-h-[240px] w-full" config={chartConfig}>
+      <ChartContainer
+        className="h-full min-h-[240px] w-full min-w-0 flex-1"
+        config={chartConfig}
+      >
         <LineChart
           {...chartRoot}
           data={rows}
@@ -106,12 +109,17 @@ export const LineChartWidget: ComponentFn<DashboardCatalog, "LineChartWidget"> =
             const lineRoot = asProps<Omit<React.ComponentProps<typeof Line>, "ref">>(
               item.lineProps
             )
+            const stroke =
+              typeof lineRoot.stroke === "string"
+                ? lineRoot.stroke
+                : `var(--color-${item.dataKey})`
             return (
               <Line
                 key={item.dataKey}
                 {...lineRoot}
                 dataKey={item.dataKey}
                 name={item.name}
+                stroke={stroke}
               />
             )
           })}

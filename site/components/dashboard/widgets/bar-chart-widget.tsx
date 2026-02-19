@@ -85,7 +85,10 @@ export const BarChartWidget: ComponentFn<DashboardCatalog, "BarChartWidget"> = (
 
   return (
     <WidgetShell placement={props.placement} title={props.title} bodyClassName="min-h-0">
-      <ChartContainer className="min-h-[240px] w-full" config={chartConfig}>
+      <ChartContainer
+        className="h-full min-h-[240px] w-full min-w-0 flex-1"
+        config={chartConfig}
+      >
         <BarChart
           {...chartRoot}
           data={rows}
@@ -100,12 +103,17 @@ export const BarChartWidget: ComponentFn<DashboardCatalog, "BarChartWidget"> = (
             const barRoot = asProps<Omit<React.ComponentProps<typeof Bar>, "ref">>(
               item.barProps
             )
+            const fill =
+              typeof barRoot.fill === "string"
+                ? barRoot.fill
+                : `var(--color-${item.dataKey})`
             return (
               <Bar
                 key={item.dataKey}
                 {...barRoot}
                 dataKey={item.dataKey}
                 name={item.name}
+                fill={fill}
               />
             )
           })}

@@ -119,19 +119,19 @@ export const TableWidget: ComponentFn<DashboardCatalog, "TableWidget"> = ({
 
   return (
     <WidgetShell placement={props.placement} title={props.title} bodyClassName="min-h-0">
-      <div className="overflow-auto rounded-xl border border-border/50">
+      <div className="overflow-auto border border-border">
         <table
           {...tableRest}
-          className={cn("w-full border-separate border-spacing-0 text-sm", tableClassName)}
+          className={cn("w-full border-collapse text-sm", tableClassName)}
         >
-          <thead className="bg-muted/40">
+          <thead className="bg-background">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
                   {...headerRest}
                   className={cn(
-                    "border-b border-border/60 px-3 py-2 text-left text-xs font-semibold tracking-wide text-muted-foreground",
+                    "border-b border-border px-3 py-2 text-left font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground",
                     column.align === "center" && "text-center",
                     column.align === "right" && "text-right",
                     headerClassName
@@ -148,7 +148,7 @@ export const TableWidget: ComponentFn<DashboardCatalog, "TableWidget"> = ({
                 key={`${rowIndex}`}
                 {...rowRest}
                 className={cn(
-                  "bg-card/40 transition-colors hover:bg-muted/30",
+                  "transition-colors hover:bg-muted/20",
                   rowClassName
                 )}
               >
@@ -156,7 +156,7 @@ export const TableWidget: ComponentFn<DashboardCatalog, "TableWidget"> = ({
                   <td
                     key={`${rowIndex}-${column.key}`}
                     className={cn(
-                      "border-b border-border/40 px-3 py-2 align-middle text-foreground",
+                      "border-b border-border px-3 py-2 align-middle text-foreground",
                       column.align === "center" && "text-center",
                       column.align === "right" && "text-right"
                     )}
